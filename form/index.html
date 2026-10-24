@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="sw">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fomu ya Mfugaji – Samora</title>
+<meta name="theme-color" content="#1f6f43">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --green: #1f6f43;
+    --green-dark: #154d2f;
+    --green-soft: #e6f2ea;
+    --ink: #1c1c1c;
+    --muted: #5f6b64;
+    --line: #cfd8d2;
+    --bg: #f6f8f6;
+    --card: #ffffff;
+    --error: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 17px;
+    line-height: 1.4;
+  }
+  header {
+    background: var(--green);
+    color: #fff;
+    padding: 18px 16px 14px;
+    position: sticky; top: 0; z-index: 5;
+  }
+  header h1 { margin: 0; font-size: 1.25rem; }
+  header p { margin: 4px 0 0; font-size: .9rem; opacity: .9; }
+  .progress { height: 6px; background: rgba(255,255,255,.3); border-radius: 3px; margin-top: 10px; overflow: hidden; }
+  .progress span { display: block; height: 100%; width: 0; background: #fff; transition: width .2s; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px; }
+  .q {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .q.invalid { border-color: var(--error); box-shadow: 0 0 0 2px rgba(179,38,30,.15); }
+  .q label.title, .q .title { display: block; font-weight: 700; margin-bottom: 4px; }
+  .q .hint { color: var(--muted); font-size: .88rem; margin: 0 0 10px; }
+  .num { display: inline-block; min-width: 1.6em; color: var(--green); }
+  input[type=text], input[type=tel] {
+    width: 100%; font-size: 1.05rem; padding: 14px;
+    border: 1.5px solid var(--line); border-radius: 10px; background: #fff;
+  }
+  input:focus { outline: none; border-color: var(--green); }
+  .gps { width: 100%; margin-top: 8px; flex-direction: row; gap: 6px; }
+  .gps-status { margin: 6px 0 0; }
+  .phone { display: flex; }
+  .phone .prefix {
+    display: flex; align-items: center; padding: 0 12px;
+    background: var(--green-soft); color: var(--green-dark); font-weight: 700;
+    border: 1.5px solid var(--line); border-right: 0; border-radius: 10px 0 0 10px;
+  }
+  .phone input { border-radius: 0 10px 10px 0; }
+  .status {
+    display: inline-block; margin-top: 10px; padding: 5px 12px;
+    border-radius: 999px; font-size: .9rem; font-weight: 600;
+    background: rgba(255,255,255,.18);
+  }
+  .status.waiting { background: #f6c343; color: #3a2a00; }
+  .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+  .opts.two { grid-template-columns: 1fr 1fr; }
+  .opt {
+    min-height: 54px; padding: 10px 8px;
+    border: 1.5px solid var(--line); border-radius: 10px;
+    background: #fff; color: var(--ink);
+    font-size: 1rem; font-weight: 600; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  }
+  .opt small { font-weight: 400; color: var(--muted); font-size: .82rem; margin-top: 2px; }
+  .opt[aria-pressed=true] { background: var(--green); border-color: var(--green); color: #fff; }
+  .opt[aria-pressed=true] small { color: #e3f1e8; }
+  .err { color: var(--error); font-size: .88rem; margin-top: 8px; display: none; }
+  .q.invalid .err { display: block; }
+  .submit {
+    width: 100%; min-height: 60px; font-size: 1.15rem; font-weight: 700;
+    background: var(--green); color: #fff; border: 0; border-radius: 12px; cursor: pointer;
+  }
+  .submit:active { background: var(--green-dark); }
+  .submit:disabled { opacity: .6; }
+  .done { text-align: center; padding: 40px 16px; }
+  .done .tick { font-size: 3.5rem; color: var(--green); }
+  .done h2 { margin: 8px 0; }
+  .pending { margin-top: 18px; font-size: .9rem; color: var(--muted); text-align: center; }
+  .pending button { background: none; border: 0; color: var(--green); text-decoration: underline; font-size: .9rem; cursor: pointer; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fomu ya Taarifa za Mfugaji</h1>
+  <p>Samora · Jaza kwa kila mfugaji unayenunua mifugo kwake</p>
+  <div class="progress"><span id="bar"></span></div>
+  <div class="status" id="status" role="status"></div>
+</header>
+
+<main>
+<form id="form" novalidate>
+
+  <div class="q" data-field="mkusanyaji">
+    <label class="title" for="mkusanyaji"><span class="num">•</span>Jina lako (mkusanyaji)</label>
+    <p class="hint">Simu hii italikumbuka jina lako kwa fomu zijazo.</p>
+    <input type="text" id="mkusanyaji" name="mkusanyaji" autocomplete="name" placeholder="Jina lako kamili">
+    <div class="err">Tafadhali andika jina lako.</div>
+  </div>
+
+  <div class="q" data-field="jina">
+    <label class="title" for="jina"><span class="num">•</span>Jina la mfugaji ni nani?</label>
+    <input type="text" id="jina" name="jina" autocomplete="off" placeholder="Jina kamili">
+    <div class="err">Tafadhali andika jina.</div>
+  </div>
+
+  <div class="q" data-field="jinsia" data-type="single">
+    <span class="title"><span class="num">•</span>Jinsia ya mfugaji</span>
+    <p class="hint">Kisia kutoka kwa jina.</p>
+    <div class="opts two">
+      <button type="button" class="opt" data-value="Mwanamume">Mwanamume</button>
+      <button type="button" class="opt" data-value="Mwanamke">Mwanamke</button>
+    </div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q" data-field="umri" data-type="single">
+    <span class="title"><span class="num">1.</span>Mfugaji ana umri gani?</span>
+    <div class="opts">
+      <button type="button" class="opt" data-value="Chini ya 25">Chini ya 25</button>
+      <button type="button" class="opt" data-value="25-34">25 – 34</button>
+      <button type="button" class="opt" data-value="35-44">35 – 44</button>
+      <button type="button" class="opt" data-value="45-54">45 – 54</button>
+      <button type="button" class="opt" data-value="55-64">55 – 64</button>
+      <button type="button" class="opt" data-value="65+">65 na zaidi</button>
+    </div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q" data-field="mahali">
+    <label class="title" for="mahali"><span class="num">2.</span>Mfugaji anaishi wapi?</label>
+    <p class="hint">Kijiji, kata au wilaya.</p>
+    <input type="text" id="mahali" name="mahali" autocomplete="off" placeholder="Mf. Kijiji cha …, Wilaya ya …">
+    <button type="button" class="opt gps" id="gpsBtn" aria-pressed="false">📍 Chukua mahali kwa GPS</button>
+    <p class="hint gps-status" id="gpsStatus">Hiari. Bonyeza ukiwa kwa mfugaji.</p>
+    <div class="err">Tafadhali andika mahali.</div>
+  </div>
+
+  <div class="q" data-field="simu">
+    <label class="title" for="simu"><span class="num">3.</span>Namba ya simu ya mfugaji ni ipi?</label>
+    <p class="hint">Namba ya Tanzania, tarakimu 9 baada ya +255.</p>
+    <div class="phone">
+      <span class="prefix">+255</span>
+      <input type="tel" id="simu" name="simu" inputmode="numeric" autocomplete="off" placeholder="7XX XXX XXX" maxlength="13">
+    </div>
+    <div class="err">Tafadhali andika namba sahihi ya simu, mf. 712 345 678.</div>
+  </div>
+
+  <div class="q" data-field="wanyama_kwa_safari" data-type="single">
+    <span class="title"><span class="num">4.</span>Mfugaji anakuuzia wanyama wangapi kila unapoenda?</span>
+    <div class="opts">
+      <button type="button" class="opt" data-value="1">1</button>
+      <button type="button" class="opt" data-value="2-3">2 – 3</button>
+      <button type="button" class="opt" data-value="4-5">4 – 5</button>
+      <button type="button" class="opt" data-value="6-10">6 – 10</button>
+      <button type="button" class="opt" data-value="11-20">11 – 20</button>
+      <button type="button" class="opt" data-value="20+">Zaidi ya 20</button>
+    </div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q" data-field="safari_kwa_mwaka" data-type="single">
+    <span class="title"><span class="num">5.</span>Unaenda kwake mara ngapi kwa mwaka?</span>
+    <div class="opts">
+      <button type="button" class="opt" data-value="1">Mara 1</button>
+      <button type="button" class="opt" data-value="2-3">Mara 2 – 3</button>
+      <button type="button" class="opt" data-value="4-6">Mara 4 – 6</button>
+      <button type="button" class="opt" data-value="7-12">Mara 7 – 12<small>kila mwezi</small></button>
+      <button type="button" class="opt" data-value="12+">Zaidi ya 12<small>kila wiki au zaidi</small></button>
+    </div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q" data-field="aina_ya_wanyama" data-type="multi">
+    <span class="title"><span class="num">6.</span>Mfugaji anakuuzia wanyama gani?</span>
+    <p class="hint">Unaweza kuchagua zaidi ya mmoja.</p>
+    <div class="opts">
+      <button type="button" class="opt" data-value="Ng'ombe">Ng'ombe</button>
+      <button type="button" class="opt" data-value="Mbuzi">Mbuzi</button>
+      <button type="button" class="opt" data-value="Kondoo">Kondoo</button>
+      <button type="button" class="opt" data-value="Kuku">Kuku</button>
+      <button type="button" class="opt" data-value="Nguruwe">Nguruwe</button>
+      <button type="button" class="opt" data-value="Ngamia">Ngamia</button>
+      <button type="button" class="opt" data-value="Samaki">Samaki</button>
+      <button type="button" class="opt" data-value="Wengine">Wengine</button>
+    </div>
+    <div class="err">Tafadhali chagua angalau mmoja.</div>
+  </div>
+
+  <div class="q" data-field="watu_nyumbani" data-type="single">
+    <span class="title"><span class="num">7.</span>Kuna watu wangapi katika nyumba ya mfugaji?</span>
+    <div class="opts">
+      <button type="button" class="opt" data-value="1-2">1 – 2</button>
+      <button type="button" class="opt" data-value="3-4">3 – 4</button>
+      <button type="button" class="opt" data-value="5-6">5 – 6</button>
+      <button type="button" class="opt" data-value="7-9">7 – 9</button>
+      <button type="button" class="opt" data-value="10+">10 au zaidi</button>
+    </div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q" data-field="sehemu_kwa_mnunuzi" data-type="single">
+    <span class="title"><span class="num">8.</span>Mfugaji anakuuzia wewe sehemu gani ya mifugo yake?</span>
+    <p class="hint">Kati ya mifugo yote anayouza.</p>
+    <div class="opts">
+      <button type="button" class="opt" data-value="Robo (kidogo)">Kidogo<small>robo · ¼</small></button>
+      <button type="button" class="opt" data-value="Nusu (nusu kwa nusu)">Nusu kwa nusu<small>nusu · ½</small></button>
+      <button type="button" class="opt" data-value="Robo tatu (nyingi)">Nyingi<small>robo tatu · ¾</small></button>
+      <button type="button" class="opt" data-value="Yote">Yote<small>kamili · 100%</small></button>
+    </div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q" data-field="sehemu_kwa_samora" data-type="single">
+    <span class="title"><span class="num">9.</span>Wewe unaiuzia Samora sehemu gani ya mifugo yako?</span>
+    <p class="hint">Kati ya mifugo yote unayouza.</p>
+    <div class="opts">
+      <button type="button" class="opt" data-value="Robo (kidogo)">Kidogo<small>robo · ¼</small></button>
+      <button type="button" class="opt" data-value="Nusu (nusu kwa nusu)">Nusu kwa nusu<small>nusu · ½</small></button>
+      <button type="button" class="opt" data-value="Robo tatu (nyingi)">Nyingi<small>robo tatu · ¾</small></button>
+      <button type="button" class="opt" data-value="Yote">Yote<small>kamili · 100%</small></button>
+    </div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <button type="submit" class="submit" id="submitBtn">Tuma</button>
+  <div class="pending" id="pending" hidden></div>
+</form>
+
+<section class="done" id="done" hidden>
+  <div class="tick">✓</div>
+  <h2>Asante!</h2>
+  <p id="doneMsg">Taarifa zimetumwa.</p>
+  <button type="button" class="submit" id="again">Jaza fomu mpya</button>
+</section>
+</main>
+
+<script>
+// Paste the Google Apps Script web-app URL here once it is deployed.
+// While empty, answers are kept on the phone and can be downloaded as CSV.
+const SUBMIT_URL = "";
+
+const QUEUE_KEY = "samora_form_queue";
+const SAVED_KEY = "samora_form_all";
+const form = document.getElementById("form");
+const questions = [...form.querySelectorAll(".q")];
+const answers = {};
+
+// The aggregator's own name is remembered on this phone between forms
+const AGG_KEY = "samora_mkusanyaji";
+const aggInput = document.getElementById("mkusanyaji");
+function fillAggregator() {
+  try { aggInput.value = localStorage.getItem(AGG_KEY) || ""; } catch {}
+}
+fillAggregator();
+
+// Optional GPS position of the farm, for the map on the impact website.
+// Works without mobile data: the phone's GPS needs no signal.
+let gps = null;
+const gpsBtn = document.getElementById("gpsBtn");
+const gpsStatus = document.getElementById("gpsStatus");
+function resetGps() {
+  gps = null;
+  gpsBtn.setAttribute("aria-pressed", "false");
+  gpsBtn.disabled = false;
+  gpsStatus.textContent = "Hiari. Bonyeza ukiwa kwa mfugaji.";
+}
+gpsBtn.addEventListener("click", () => {
+  if (!navigator.geolocation) { gpsStatus.textContent = "Simu hii haina GPS."; return; }
+  gpsBtn.disabled = true;
+  gpsStatus.textContent = "Inatafuta mahali…";
+  navigator.geolocation.getCurrentPosition(p => {
+    gps = { lat: +p.coords.latitude.toFixed(5), lng: +p.coords.longitude.toFixed(5) };
+    gpsBtn.setAttribute("aria-pressed", "true");
+    gpsBtn.disabled = false;
+    gpsStatus.textContent = `Mahali pamepatikana ✓ (karibu mita ${Math.round(p.coords.accuracy)})`;
+  }, () => {
+    gpsBtn.disabled = false;
+    gpsStatus.textContent = "Imeshindikana. Washa Location kwenye simu na ujaribu tena.";
+  }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 });
+});
+
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
+}
+function store(key, rows) {
+  try { localStorage.setItem(key, JSON.stringify(rows)); } catch {}
+}
+
+// Button groups: single choice or multiple choice
+questions.forEach(q => {
+  const field = q.dataset.field;
+  const type = q.dataset.type;
+  if (!type) {
+    q.querySelector("input").addEventListener("input", () => { q.classList.remove("invalid"); updateProgress(); });
+    return;
+  }
+  q.querySelectorAll(".opt").forEach(btn => {
+    btn.setAttribute("aria-pressed", "false");
+    btn.addEventListener("click", () => {
+      if (type === "single") {
+        q.querySelectorAll(".opt").forEach(b => b.setAttribute("aria-pressed", "false"));
+        btn.setAttribute("aria-pressed", "true");
+        answers[field] = btn.dataset.value;
+      } else {
+        const on = btn.getAttribute("aria-pressed") !== "true";
+        btn.setAttribute("aria-pressed", String(on));
+        answers[field] = [...q.querySelectorAll('.opt[aria-pressed=true]')].map(b => b.dataset.value);
+      }
+      q.classList.remove("invalid");
+      updateProgress();
+    });
+  });
+});
+
+// Tanzanian mobile number without country code or leading 0, e.g. "712345678"
+function localPhone(raw) {
+  let d = raw.replace(/\D/g, "");
+  if (d.startsWith("255")) d = d.slice(3);
+  if (d.startsWith("0")) d = d.slice(1);
+  return d;
+}
+
+function value(q) {
+  const field = q.dataset.field;
+  if (!q.dataset.type) {
+    const v = q.querySelector("input").value.trim();
+    return field === "simu" && v ? "+255" + localPhone(v) : v;
+  }
+  const v = answers[field];
+  return Array.isArray(v) ? v.join(", ") : (v || "");
+}
+
+function isValid(q) {
+  if (q.dataset.field === "simu") return /^[67]\d{8}$/.test(localPhone(q.querySelector("input").value));
+  return value(q).length > 0;
+}
+
+function updateProgress() {
+  const done = questions.filter(isValid).length;
+  document.getElementById("bar").style.width = (done / questions.length * 100) + "%";
+}
+
+async function send(row) {
+  if (!SUBMIT_URL || !navigator.onLine) return false;
+  try {
+    // text/plain avoids a CORS preflight, which Apps Script does not answer
+    await fetch(SUBMIT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(row) });
+    return true;
+  } catch { return false; }
+}
+
+// Every form goes into the queue first; sent forms are removed by id, so a
+// form added while a send is in progress is never overwritten.
+let flushing = false;
+async function flushQueue() {
+  if (flushing) return;
+  flushing = true;
+  try {
+    for (const row of load(QUEUE_KEY)) {
+      if (!(await send(row))) break;
+      store(QUEUE_KEY, load(QUEUE_KEY).filter(r => r.id !== row.id));
+      updateCounter();
+    }
+  } finally {
+    flushing = false;
+    updateCounter();
+  }
+}
+
+function updateCounter() {
+  const waiting = load(QUEUE_KEY).length;
+  const status = document.getElementById("status");
+  const net = navigator.onLine ? "" : " · Hakuna mtandao";
+  status.classList.toggle("waiting", waiting > 0);
+  status.textContent = waiting
+    ? `Fomu ${waiting} ${waiting === 1 ? "inasubiri" : "zinasubiri"} kutumwa${net}`
+    : `Fomu zote zimetumwa ✓${net}`;
+
+  const el = document.getElementById("pending");
+  const total = load(SAVED_KEY).length;
+  el.hidden = !total;
+  if (total) {
+    el.innerHTML = `Fomu ${total} zimehifadhiwa kwenye simu hii. <button type="button" id="csv">Pakua CSV</button>`;
+    document.getElementById("csv").onclick = downloadCsv;
+  }
+}
+
+function downloadCsv() {
+  const rows = load(SAVED_KEY);
+  if (!rows.length) return;
+  const cols = Object.keys(rows[0]);
+  const esc = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = [cols.join(","), ...rows.map(r => cols.map(c => esc(r[c])).join(","))].join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv" }));
+  a.download = "samora_wafugaji.csv";
+  a.click();
+}
+
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  const bad = questions.filter(q => !isValid(q));
+  questions.forEach(q => q.classList.toggle("invalid", bad.includes(q)));
+  if (bad.length) { bad[0].scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+
+  const row = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    muda: new Date().toISOString()
+  };
+  questions.forEach(q => row[q.dataset.field] = value(q));
+  try { localStorage.setItem(AGG_KEY, row.mkusanyaji); } catch {}
+  row.lat = gps ? gps.lat : "";
+  row.lng = gps ? gps.lng : "";
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true; btn.textContent = "Inatuma…";
+  store(SAVED_KEY, [...load(SAVED_KEY), row]);
+  store(QUEUE_KEY, [...load(QUEUE_KEY), row]);
+  updateCounter();
+  await flushQueue();
+  const sent = !load(QUEUE_KEY).some(r => r.id === row.id);
+  btn.disabled = false; btn.textContent = "Tuma";
+
+  document.getElementById("doneMsg").textContent =
+    sent ? "Taarifa zimetumwa." :
+    "Taarifa zimehifadhiwa kwenye simu hii na zitatumwa mtandao ukipatikana.";
+  form.hidden = true;
+  document.getElementById("done").hidden = false;
+  window.scrollTo(0, 0);
+});
+
+document.getElementById("again").addEventListener("click", () => {
+  form.reset();
+  Object.keys(answers).forEach(k => delete answers[k]);
+  form.querySelectorAll(".opt").forEach(b => b.setAttribute("aria-pressed", "false"));
+  questions.forEach(q => q.classList.remove("invalid"));
+  resetGps();
+  fillAggregator();
+  updateProgress();
+  updateCounter();
+  document.getElementById("done").hidden = true;
+  form.hidden = false;
+  window.scrollTo(0, 0);
+});
+
+window.addEventListener("online", flushQueue);
+window.addEventListener("offline", updateCounter);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) flushQueue(); });
+setInterval(flushQueue, 60000); // weak signal often never fires an "online" event
+
+// Lets the page open with no signal after it has been opened once
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+
+flushQueue();
+updateProgress();
+</script>
+</body>
+</html>

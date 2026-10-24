@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Samora Farmer Impact</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<style>
+  /* Samora green and white. Swap --green for the exact brand colour. */
+  :root {
+    --green: #1f6f43;
+    --green-dark: #154d2f;
+    --green-mid: #2f8a57;
+    --green-soft: #e8f3ec;
+    --green-line: #cfe3d6;
+    --white: #ffffff;
+    --ink: #17241c;
+    --ink-2: #3d4d43;
+    --muted: #64746a;
+    --error: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--white); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px; line-height: 1.5;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+
+  header { background: var(--green); color: var(--white); }
+  header .wrap { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding-top: 16px; padding-bottom: 16px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--white); color: var(--green);
+    display: grid; place-items: center; font-weight: 800; font-size: 1.2rem;
+  }
+  header h1 { margin: 0; font-size: 1.3rem; }
+  header .meta { font-size: .88rem; opacity: .92; }
+  .actions { display: flex; gap: 8px; align-items: center; }
+  .role { font-size: .82rem; background: var(--white); color: var(--green); border-radius: 999px; padding: 4px 10px; font-weight: 700; }
+  header button {
+    font: inherit; font-size: .9rem; background: transparent; color: var(--white);
+    border: 1.5px solid rgba(255,255,255,.7); border-radius: 8px; padding: 6px 12px; cursor: pointer;
+  }
+
+  /* PIN screen */
+  .pin-screen { min-height: calc(100vh - 80px); display: grid; place-items: center; padding: 24px 16px; background: var(--green-soft); }
+  .pin-card { background: var(--white); border: 1px solid var(--green-line); border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 380px; text-align: center; }
+  .pin-card h2 { margin: 0 0 6px; color: var(--green-dark); }
+  .pin-card p { color: var(--muted); margin: 0 0 18px; font-size: .95rem; }
+  .pin-card input {
+    width: 100%; font-size: 1.8rem; letter-spacing: .4em; text-align: center; padding: 12px;
+    border: 2px solid var(--green-line); border-radius: 10px; color: var(--ink);
+  }
+  .pin-card input:focus { outline: none; border-color: var(--green); }
+  .pin-card button {
+    width: 100%; margin-top: 14px; font: inherit; font-weight: 700; font-size: 1.05rem; padding: 14px;
+    background: var(--green); color: var(--white); border: 0; border-radius: 10px; cursor: pointer;
+  }
+  .pin-card button:disabled { opacity: .6; }
+  .pin-err { color: var(--error); min-height: 1.5em; margin-top: 10px; font-size: .92rem; }
+  .demo-note { margin-top: 16px; font-size: .85rem; color: var(--muted); background: var(--green-soft); border-radius: 8px; padding: 8px 10px; }
+
+  /* Impact page */
+  .hero { background: var(--green-soft); border-bottom: 1px solid var(--green-line); padding: 22px 0; }
+  .hero h2 { margin: 0 0 4px; font-size: 1.5rem; color: var(--green-dark); }
+  .hero p { margin: 0 0 16px; color: var(--ink-2); }
+  .banner { background: #fff7e0; color: #5a4300; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: .92rem; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .tile { background: var(--white); border: 1px solid var(--green-line); border-radius: 12px; padding: 14px 16px; }
+  .tile .label { color: var(--muted); font-size: .88rem; }
+  .tile .value { font-size: 2rem; font-weight: 800; color: var(--green-dark); font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 2px; }
+  .tile .sub { color: var(--muted); font-size: .8rem; }
+
+  section.block { padding: 22px 0 6px; }
+  section.block > .wrap > h2 { margin: 0 0 2px; font-size: 1.2rem; color: var(--green-dark); }
+  .lead { color: var(--muted); margin: 0 0 14px; font-size: .92rem; }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 0; }
+  .filters input, .filters select {
+    font: inherit; font-size: .95rem; color: var(--ink); background: var(--white);
+    border: 1.5px solid var(--green-line); border-radius: 8px; padding: 9px 10px;
+  }
+  .filters input { flex: 1 1 220px; min-width: 0; }
+  .filters .count { align-self: center; color: var(--ink-2); font-size: .9rem; }
+
+  .map-layout { display: grid; grid-template-columns: 1fr 320px; gap: 12px; }
+  #map { height: 520px; border-radius: 12px; border: 1px solid var(--green-line); z-index: 0; }
+  .in-view { border: 1px solid var(--green-line); border-radius: 12px; display: flex; flex-direction: column; max-height: 520px; min-width: 0; }
+  .in-view h3 { margin: 0; padding: 12px 14px; font-size: .98rem; border-bottom: 1px solid var(--green-line); background: var(--green-soft); border-radius: 12px 12px 0 0; color: var(--green-dark); }
+  .in-view ul { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+  .in-view li { padding: 10px 14px; border-bottom: 1px solid var(--green-line); cursor: pointer; }
+  .in-view li:hover { background: var(--green-soft); }
+  .in-view li strong { display: block; }
+  .in-view li span { color: var(--muted); font-size: .85rem; }
+  .in-view .more, .in-view .none { padding: 12px 14px; color: var(--muted); font-size: .88rem; cursor: default; }
+  .map-note { color: var(--muted); font-size: .85rem; margin: 8px 0 0; }
+
+  .pin { background: var(--green); border: 2.5px solid var(--white); border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+  .cluster {
+    background: var(--green); color: var(--white); border: 3px solid var(--white); border-radius: 50%;
+    display: grid; place-items: center; font-weight: 800; font-size: .9rem; box-shadow: 0 1px 5px rgba(0,0,0,.35);
+  }
+  .leaflet-popup-content { font-size: .9rem; line-height: 1.45; margin: 12px 14px; }
+  .leaflet-popup-content h4 { margin: 0 0 4px; color: var(--green-dark); font-size: 1rem; }
+  .leaflet-popup-content dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 6px 0 0; }
+  .leaflet-popup-content dt { color: var(--muted); }
+  .leaflet-popup-content dd { margin: 0; }
+
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+  .card { background: var(--white); border: 1px solid var(--green-line); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+  .card h3 { font-size: 1rem; margin: 0 0 2px; }
+  .card .desc { color: var(--muted); font-size: .84rem; margin: 0 0 12px; }
+  .bars { display: grid; gap: 8px; }
+  .bar-row { display: grid; grid-template-columns: minmax(96px, 36%) 1fr 70px; gap: 10px; align-items: center; }
+  .bar-row .name { color: var(--ink-2); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-row .track { height: 14px; display: flex; align-items: center; }
+  .bar-row .fill { height: 14px; background: var(--green-mid); border-radius: 0 4px 4px 0; min-width: 2px; }
+  .bar-row:hover .fill { background: var(--green-dark); }
+  .bar-row .num { color: var(--ink-2); font-size: .86rem; text-align: right; font-variant-numeric: tabular-nums; }
+  .empty { color: var(--muted); font-size: .9rem; }
+
+  .table-card { padding: 0; overflow: hidden; margin-bottom: 28px; }
+  .table-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; gap: 8px; flex-wrap: wrap; }
+  .table-head h3 { margin: 0; font-size: 1rem; }
+  .table-head button { font: inherit; font-size: .9rem; background: var(--green); color: var(--white); border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { text-align: left; padding: 9px 12px; border-top: 1px solid var(--green-line); white-space: nowrap; }
+  th { color: var(--green-dark); font-weight: 700; background: var(--green-soft); }
+  td a { color: var(--green); }
+  footer { color: var(--muted); font-size: .82rem; padding: 0 0 24px; }
+
+  #tip { position: fixed; pointer-events: none; z-index: 1000; display: none; background: var(--green-dark); color: var(--white); font-size: .82rem; padding: 6px 9px; border-radius: 6px; max-width: 240px; }
+  body:not(.is-admin) .admin-only { display: none !important; }
+  [hidden] { display: none !important; }
+
+  @media (max-width: 820px) {
+    .map-layout { grid-template-columns: 1fr; }
+    #map { height: 420px; }
+    .in-view { max-height: 320px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">S</div>
+      <div>
+        <h1>Samora Farmer Impact</h1>
+        <div class="meta" id="meta">Locked</div>
+      </div>
+    </div>
+    <div class="actions" id="actions" hidden>
+      <span class="role" id="role"></span>
+      <button type="button" id="refresh">Refresh</button>
+      <button type="button" id="lock">Lock</button>
+    </div>
+  </div>
+</header>
+
+<section class="pin-screen" id="pinScreen">
+  <form class="pin-card" id="pinForm">
+    <h2>Enter your PIN</h2>
+    <p>This page shows information about the farmers Samora works with.</p>
+    <input type="password" id="pin" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="PIN" autofocus>
+    <button type="submit" id="pinBtn">Open</button>
+    <div class="pin-err" id="pinErr" role="alert"></div>
+    <div class="demo-note" id="demoNote" hidden>Sample mode, not connected to the database yet.<br>Admin PIN <b>123456</b> · Funder PIN <b>654321</b></div>
+  </form>
+</section>
+
+<div id="app" hidden>
+  <section class="hero">
+    <div class="wrap">
+      <div class="banner" id="demo" hidden><strong>Sample data.</strong> These farmers are made up. Real answers appear here once the form is connected to the database.</div>
+      <h2>Farmers in Samora's supply chain</h2>
+      <p>Every farmer below was visited by a Samora aggregator, who recorded their answers on the Samora field form.</p>
+      <div class="tiles">
+        <div class="tile"><div class="label">Farmers reached</div><div class="value" id="tFarmers">–</div><div class="sub" id="tFarmersSub"></div></div>
+        <div class="tile"><div class="label">Places reached</div><div class="value" id="tPlaces">–</div><div class="sub">villages and districts recorded</div></div>
+        <div class="tile"><div class="label">Women farmers</div><div class="value" id="tWomen">–</div><div class="sub">of farmers reached</div></div>
+        <div class="tile"><div class="label">Animals bought per year</div><div class="value" id="tAnimals">–</div><div class="sub">estimate from farmers' answers</div></div>
+        <div class="tile"><div class="label">People in farmer households</div><div class="value" id="tPeople">–</div><div class="sub">estimate, all households combined</div></div>
+      </div>
+      <div class="filters">
+        <input type="search" id="q" placeholder="Search farmer, aggregator or place">
+        <select id="fAgg"><option value="">All aggregators</option></select>
+        <select id="fAnimal"><option value="">All animals</option></select>
+        <select id="fGender"><option value="">Women and men</option><option value="Mwanamke">Women</option><option value="Mwanamume">Men</option></select>
+        <select id="fPeriod">
+          <option value="">All time</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last 12 months</option>
+        </select>
+        <span class="count" id="count"></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2>Where the farmers are</h2>
+      <p class="lead">Drag and zoom the map. Green circles group nearby farmers; tap one to zoom in, tap a pin to see that farmer.</p>
+      <div class="map-layout">
+        <div id="map" role="region" aria-label="Map of farmers in Tanzania"></div>
+        <aside class="in-view">
+          <h3 id="inViewTitle">Farmers in this area</h3>
+          <ul id="inView"></ul>
+        </aside>
+      </div>
+      <p class="map-note" id="mapNote"></p>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2>What farmers told us</h2>
+      <p class="lead">Answers from the field form, for the farmers shown above.</p>
+      <div class="charts">
+        <div class="card"><h3>Animals farmers sell</h3><p class="desc">A farmer can sell more than one type</p><div class="bars" id="cAnimals"></div></div>
+        <div class="card"><h3>Share of livestock reaching Samora</h3><p class="desc">How much of the aggregator's livestock goes to Samora</p><div class="bars" id="cShareSamora"></div></div>
+        <div class="card"><h3>Share sold to the aggregator</h3><p class="desc">How much of the farmer's livestock goes to the aggregator</p><div class="bars" id="cShareAgg"></div></div>
+        <div class="card"><h3>Farmers per aggregator</h3><p class="desc">Who recorded each farmer on the form</p><div class="bars" id="cAgg"></div></div>
+        <div class="card"><h3>Visits per year</h3><p class="desc">How often the aggregator buys from the farmer</p><div class="bars" id="cVisits"></div></div>
+        <div class="card"><h3>Farmer age</h3><p class="desc">Farmers by age group</p><div class="bars" id="cAge"></div></div>
+        <div class="card"><h3>Top places</h3><p class="desc">Farmers by place, as recorded on the form</p><div class="bars" id="cLocation"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="card table-card">
+        <div class="table-head">
+          <h3>All farmer records</h3>
+          <button type="button" id="csv">Download CSV</button>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr>
+              <th>Date</th><th>Aggregator</th><th>Farmer</th><th>Gender</th><th>Age</th><th>Place</th><th class="admin-only">Phone</th>
+              <th>Animals</th><th>Per visit</th><th>Visits/yr</th><th>Household</th>
+              <th>Share → aggregator</th><th>Share → Samora</th>
+            </tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+      <footer>Funder view hides phone numbers and blurs map locations to about 1 km. Map © OpenStreetMap contributors.</footer>
+    </div>
+  </section>
+</div>
+<div id="tip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script>
+// The same Google Apps Script web-app URL the form posts to.
+// While empty, the page runs on made-up sample data with the demo PINs.
+const DATA_URL = "";
+const PIN_STORE = "samora_pin"; // sessionStorage: closing the tab locks the page again
+
+const ORDER = {
+  umri: ["Chini ya 25", "25-34", "35-44", "45-54", "55-64", "65+"],
+  wanyama_kwa_safari: ["1", "2-3", "4-5", "6-10", "11-20", "20+"],
+  safari_kwa_mwaka: ["1", "2-3", "4-6", "7-12", "12+"],
+  watu_nyumbani: ["1-2", "3-4", "5-6", "7-9", "10+"],
+  share: ["Robo (kidogo)", "Nusu (nusu kwa nusu)", "Robo tatu (nyingi)", "Yote"],
+  animals: ["Ng'ombe", "Mbuzi", "Kondoo", "Kuku", "Nguruwe", "Ngamia", "Samaki", "Wengine"]
+};
+const LABEL = {
+  "Ng'ombe": "Cattle", "Mbuzi": "Goats", "Kondoo": "Sheep", "Kuku": "Chickens",
+  "Nguruwe": "Pigs", "Ngamia": "Camels", "Samaki": "Fish", "Wengine": "Other",
+  "Robo (kidogo)": "A little (¼)", "Nusu (nusu kwa nusu)": "Half (½)", "Robo tatu (nyingi)": "A lot (¾)", "Yote": "Everything",
+  "Chini ya 25": "Under 25", "65+": "65 and over", "20+": "More than 20", "12+": "More than 12", "10+": "10 or more",
+  "Mwanamume": "Man", "Mwanamke": "Woman"
+};
+// Range midpoints for the estimates
+const MID = {
+  wanyama_kwa_safari: { "1": 1, "2-3": 2.5, "4-5": 4.5, "6-10": 8, "11-20": 15.5, "20+": 25 },
+  safari_kwa_mwaka: { "1": 1, "2-3": 2.5, "4-6": 5, "7-12": 9.5, "12+": 24 },
+  watu_nyumbani: { "1-2": 1.5, "3-4": 3.5, "5-6": 5.5, "7-9": 8, "10+": 11 }
+};
+const TANZANIA_VIEW = { center: [-6.3, 35.0], zoom: 6 };
+const label = v => LABEL[v] || v;
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString("en-US");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const animals = r => String(r.aina_ya_wanyama || "").split(", ").filter(Boolean);
+// Older forms have no aggregator; typed names vary in spacing and capitals
+const aggName = r => String(r.mkusanyaji || "").trim().replace(/\s+/g, " ").replace(/\b\p{L}/gu, c => c.toUpperCase()) || "Not recorded";
+const hasLoc = r => r.lat !== "" && r.lng !== "" && r.lat != null && isFinite(r.lat) && isFinite(r.lng);
+
+let all = [], role = null, map, cluster, mapped = [], fitted = false;
+
+function getPin() { try { return sessionStorage.getItem(PIN_STORE) || ""; } catch { return ""; } }
+function setPin(pin) { try { pin ? sessionStorage.setItem(PIN_STORE, pin) : sessionStorage.removeItem(PIN_STORE); } catch {} }
+
+// ---------- PIN and data ----------
+
+async function fetchData(pin) {
+  if (!DATA_URL) {
+    const r = pin === "123456" ? "admin" : pin === "654321" ? "funder" : null;
+    if (!r) return { error: "wrong_pin" };
+    const rows = sampleData();
+    return { role: r, rows: r === "admin" ? rows : rows.map(blur) };
+  }
+  // POST keeps the PIN out of the web address and server logs
+  const res = await fetch(DATA_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "read", pin })
+  });
+  return res.json();
+}
+
+// What the server does for the funder PIN; used here only for sample mode
+function blur(r) {
+  const o = { ...r };
+  delete o.simu;
+  if (hasLoc(o)) { o.lat = Number(o.lat).toFixed(2); o.lng = Number(o.lng).toFixed(2); }
+  return o;
+}
+
+async function unlock(pin) {
+  $("pinErr").textContent = "";
+  $("pinBtn").disabled = true;
+  $("meta").textContent = "Checking PIN…";
+  try {
+    const data = await fetchData(pin);
+    if (data.error) {
+      setPin("");
+      $("pinErr").textContent = data.error === "locked"
+        ? "Too many wrong PINs. The page is locked for 15 minutes."
+        : "That PIN is not correct.";
+      $("meta").textContent = "Locked";
+      showPin();
+      return;
+    }
+    setPin(pin);
+    role = data.role;
+    all = data.rows.map(r => ({ ...r, lat: r.lat === "" ? "" : Number(r.lat), lng: r.lng === "" ? "" : Number(r.lng) }));
+    fillAggFilter();
+    showApp();
+  } catch {
+    $("pinErr").textContent = "Could not reach the database. Check the internet connection and try again.";
+    $("meta").textContent = "Offline";
+    showPin();
+  } finally {
+    $("pinBtn").disabled = false;
+  }
+}
+
+function fillAggFilter() {
+  const keep = $("fAgg").value;
+  const names = [...new Set(all.map(aggName))].sort();
+  $("fAgg").innerHTML = `<option value="">All aggregators</option>` +
+    names.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join("");
+  $("fAgg").value = names.includes(keep) ? keep : "";
+}
+
+function showPin() {
+  $("pinScreen").hidden = false;
+  $("app").hidden = true;
+  $("actions").hidden = true;
+  $("pin").value = "";
+  $("pin").focus();
+}
+
+function showApp() {
+  $("pinScreen").hidden = true;
+  $("app").hidden = false;
+  $("actions").hidden = false;
+  $("demo").hidden = !!DATA_URL;
+  document.body.classList.toggle("is-admin", role === "admin");
+  $("role").textContent = role === "admin" ? "Admin view" : "Funder view";
+  $("meta").textContent = (DATA_URL ? "Live" : "Sample data") + " · updated " +
+    new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (!map) initMap();
+  map.invalidateSize();
+  render();
+}
+
+function lock() {
+  setPin("");
+  role = null; all = []; mapped = []; fitted = false;
+  if (cluster) cluster.clearLayers();
+  $("rows").innerHTML = "";
+  $("meta").textContent = "Locked";
+  showPin();
+}
+
+// ---------- filters and summary ----------
+
+function filtered() {
+  const q = $("q").value.trim().toLowerCase();
+  const agg = $("fAgg").value;
+  const animal = $("fAnimal").value;
+  const gender = $("fGender").value;
+  const days = Number($("fPeriod").value);
+  const since = days ? Date.now() - days * 864e5 : 0;
+  return all.filter(r =>
+    (!q || [r.jina, r.mkusanyaji, r.mahali, r.simu].some(v => String(v || "").toLowerCase().includes(q))) &&
+    (!agg || aggName(r) === agg) &&
+    (!animal || animals(r).includes(animal)) &&
+    (!gender || r.jinsia === gender) &&
+    (!since || new Date(r.muda).getTime() >= since)
+  );
+}
+
+function countBy(rows, field, order, multi) {
+  const counts = new Map((order || []).map(k => [k, 0]));
+  rows.forEach(r => (multi ? animals(r) : [r[field]]).forEach(v => { if (v) counts.set(v, (counts.get(v) || 0) + 1); }));
+  return [...counts];
+}
+
+function bars(el, entries, total) {
+  if (!total) { $(el).innerHTML = `<p class="empty">No farmers match.</p>`; return; }
+  const max = Math.max(1, ...entries.map(e => e[1]));
+  $(el).innerHTML = entries.map(([k, n]) => {
+    const pct = Math.round(n / total * 100);
+    return `<div class="bar-row" data-tip="${esc(label(k))}: ${n} farmer${n === 1 ? "" : "s"} (${pct}%)">
+      <span class="name">${esc(label(k))}</span>
+      <span class="track"><span class="fill" style="width:${n / max * 100}%"></span></span>
+      <span class="num">${n} · ${pct}%</span></div>`;
+  }).join("");
+}
+
+function render() {
+  const rows = filtered();
+  const n = rows.length;
+  $("count").textContent = n === all.length ? `${n} farmers` : `${n} of ${all.length} farmers`;
+
+  const month = all.filter(r => Date.now() - new Date(r.muda) < 30 * 864e5).length;
+  $("tFarmers").textContent = fmt(n);
+  $("tFarmersSub").textContent = `${month} added in the last 30 days`;
+  $("tPlaces").textContent = fmt(new Set(rows.map(r => String(r.mahali || "").trim().toLowerCase()).filter(Boolean)).size);
+  $("tWomen").textContent = n ? Math.round(rows.filter(r => r.jinsia === "Mwanamke").length / n * 100) + "%" : "–";
+  const perYear = rows.reduce((s, r) => s + (MID.wanyama_kwa_safari[r.wanyama_kwa_safari] || 0) * (MID.safari_kwa_mwaka[r.safari_kwa_mwaka] || 0), 0);
+  $("tAnimals").textContent = n ? "≈ " + fmt(perYear) : "–";
+  const people = rows.reduce((s, r) => s + (MID.watu_nyumbani[r.watu_nyumbani] || 0), 0);
+  $("tPeople").textContent = n ? "≈ " + fmt(people) : "–";
+
+  bars("cAnimals", countBy(rows, "aina_ya_wanyama", ORDER.animals, true).filter(e => e[1]).sort((a, b) => b[1] - a[1]), n);
+  bars("cShareSamora", countBy(rows, "sehemu_kwa_samora", ORDER.share), n);
+  bars("cShareAgg", countBy(rows, "sehemu_kwa_mnunuzi", ORDER.share), n);
+  const aggs = countBy(rows.map(r => ({ agg: aggName(r) })), "agg").sort((a, b) => b[1] - a[1]);
+  const aggTop = aggs.slice(0, 8);
+  const aggRest = aggs.slice(8).reduce((s, e) => s + e[1], 0);
+  if (aggRest) aggTop.push(["Other aggregators", aggRest]);
+  bars("cAgg", aggTop, n);
+  bars("cVisits", countBy(rows, "safari_kwa_mwaka", ORDER.safari_kwa_mwaka), n);
+  bars("cAge", countBy(rows, "umri", ORDER.umri), n);
+  const locs = countBy(rows, "mahali").sort((a, b) => b[1] - a[1]);
+  const top = locs.slice(0, 7);
+  const rest = locs.slice(7).reduce((s, e) => s + e[1], 0);
+  if (rest) top.push(["Other places", rest]);
+  bars("cLocation", top, n);
+
+  drawMap(rows);
+  drawTable(rows);
+}
+
+function drawTable(rows) {
+  $("rows").innerHTML = rows.slice().sort((a, b) => new Date(b.muda) - new Date(a.muda)).map(r => `<tr>
+      <td>${esc(new Date(r.muda).toLocaleDateString("en-GB"))}</td>
+      <td>${esc(r.mkusanyaji)}</td><td>${esc(r.jina)}</td><td>${esc(label(r.jinsia))}</td><td>${esc(label(r.umri))}</td>
+      <td>${esc(r.mahali)}</td><td class="admin-only">${r.simu ? `<a href="tel:${esc(r.simu)}">${esc(r.simu)}</a>` : ""}</td>
+      <td>${esc(animals(r).map(label).join(", "))}</td>
+      <td>${esc(label(r.wanyama_kwa_safari))}</td><td>${esc(label(r.safari_kwa_mwaka))}</td>
+      <td>${esc(label(r.watu_nyumbani))}</td>
+      <td>${esc(label(r.sehemu_kwa_mnunuzi))}</td><td>${esc(label(r.sehemu_kwa_samora))}</td>
+    </tr>`).join("") || `<tr><td colspan="13" class="empty">No farmers match.</td></tr>`;
+}
+
+// ---------- map ----------
+
+function initMap() {
+  map = L.map("map", { minZoom: 5, maxBounds: [[-15, 26], [3, 44]], maxBoundsViscosity: 0.8 })
+    .setView(TANZANIA_VIEW.center, TANZANIA_VIEW.zoom);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+  cluster = L.markerClusterGroup({
+    showCoverageOnHover: false,
+    maxClusterRadius: 50,
+    iconCreateFunction: c => {
+      const n = c.getChildCount();
+      const size = n < 10 ? 36 : n < 50 ? 44 : 52;
+      return L.divIcon({ html: String(n), className: "cluster", iconSize: [size, size] });
+    }
+  });
+  map.addLayer(cluster);
+  map.on("moveend", listInView);
+}
+
+const pinIcon = L.divIcon({ className: "pin", iconSize: [18, 18] });
+
+function popup(r) {
+  const rows = [
+    ["Place", esc(r.mahali)],
+    ["Aggregator", esc(r.mkusanyaji || "–")],
+    role === "admin" && r.simu ? ["Phone", `<a href="tel:${esc(r.simu)}">${esc(r.simu)}</a>`] : null,
+    ["Sells", esc(animals(r).map(label).join(", "))],
+    ["Per visit", esc(label(r.wanyama_kwa_safari)) + " animals"],
+    ["Visits/yr", esc(label(r.safari_kwa_mwaka))],
+    ["To Samora", esc(label(r.sehemu_kwa_samora))],
+    ["Recorded", esc(new Date(r.muda).toLocaleDateString("en-GB"))]
+  ].filter(Boolean);
+  return `<h4>${esc(r.jina)}</h4>${esc(label(r.jinsia))} · ${esc(label(r.umri))}
+    <dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
+}
+
+function drawMap(rows) {
+  cluster.clearLayers();
+  mapped = rows.filter(hasLoc);
+  mapped.forEach(r => {
+    r._marker = L.marker([r.lat, r.lng], { icon: pinIcon, title: r.jina }).bindPopup(popup(r));
+    cluster.addLayer(r._marker);
+  });
+  const missing = rows.length - mapped.length;
+  $("mapNote").textContent = missing
+    ? `${missing} farmer${missing === 1 ? " has" : "s have"} no map location yet (no GPS, and the place name could not be found).`
+    : "";
+  if (!fitted && mapped.length) {
+    map.fitBounds(L.latLngBounds(mapped.map(r => [r.lat, r.lng])).pad(0.2), { maxZoom: 9 });
+    fitted = true;
+  }
+  listInView();
+}
+
+function listInView() {
+  if (!map) return;
+  const b = map.getBounds();
+  const inView = mapped.filter(r => b.contains([r.lat, r.lng])).sort((a, c) => String(a.jina).localeCompare(c.jina));
+  $("inViewTitle").textContent = `Farmers in this area (${inView.length})`;
+  const shown = inView.slice(0, 150);
+  $("inView").innerHTML = shown.map((r, i) => `<li data-i="${i}"><strong>${esc(r.jina)}</strong>
+      <span>${esc(r.mahali)} · ${esc(animals(r).map(label).join(", "))}</span></li>`).join("") +
+    (inView.length > shown.length ? `<li class="more">Zoom in to see the other ${inView.length - shown.length}.</li>` : "") +
+    (!inView.length ? `<li class="none">No farmers here. Drag or zoom out the map.</li>` : "");
+  $("inView").querySelectorAll("li[data-i]").forEach(li => li.addEventListener("click", () => {
+    const m = shown[li.dataset.i]._marker;
+    cluster.zoomToShowLayer(m, () => m.openPopup());
+  }));
+}
+
+// ---------- CSV ----------
+
+function downloadCsv() {
+  const rows = filtered();
+  if (!rows.length) return;
+  const cols = ["muda", "mkusanyaji", "jina", "jinsia", "umri", "mahali", ...(role === "admin" ? ["simu"] : []),
+    "wanyama_kwa_safari", "safari_kwa_mwaka", "aina_ya_wanyama", "watu_nyumbani",
+    "sehemu_kwa_mnunuzi", "sehemu_kwa_samora", "lat", "lng"];
+  const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = [cols.join(","), ...rows.map(r => cols.map(c => q(r[c])).join(","))].join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv" }));
+  a.download = `samora_farmers_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+}
+
+// ---------- sample data ----------
+
+// Made-up farmers so the page can be reviewed before the database exists
+function sampleData() {
+  let s = 7;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const pick = (arr, w) => {
+    const t = (w || arr.map(() => 1)).reduce((a, b) => a + b, 0);
+    let x = rnd() * t;
+    for (let i = 0; i < arr.length; i++) { x -= (w ? w[i] : 1); if (x <= 0) return arr[i]; }
+    return arr[arr.length - 1];
+  };
+  const men = ["Juma", "Hamisi", "Baraka", "Emmanuel", "Joseph", "Daudi", "Salim", "Peter", "Musa", "Ibrahim", "John", "Rashidi"];
+  const women = ["Amina", "Neema", "Rehema", "Grace", "Zawadi", "Mwanaisha", "Esther", "Halima", "Upendo", "Fatuma"];
+  const aggregators = ["Daniel Laizer", "Mariamu Kweka", "Shabani Mollel", "Elia Tarimo", "Saidi Mbwambo"];
+  const last = ["Mwita", "Hassan", "Joseph", "Mollel", "Laizer", "Massawe", "Kimaro", "Juma", "Mushi", "Saning'o", "Lyimo"];
+  const places = [
+    ["Monduli, Arusha", -3.30, 36.45, 6], ["Karatu, Arusha", -3.34, 35.67, 5], ["Longido, Arusha", -2.73, 36.70, 4],
+    ["Babati, Manyara", -4.21, 35.75, 4], ["Simanjiro, Manyara", -4.10, 36.95, 3], ["Hai, Kilimanjaro", -3.27, 37.15, 3],
+    ["Same, Kilimanjaro", -4.07, 37.73, 2], ["Kiteto, Manyara", -5.30, 36.57, 2], ["Ngorongoro, Arusha", -2.05, 35.63, 1],
+    ["Mwanga, Kilimanjaro", -3.67, 37.58, 1], ["Kondoa, Dodoma", -4.90, 35.78, 2], ["Singida Mjini, Singida", -4.82, 34.75, 1],
+    ["Kishapu, Shinyanga", -3.62, 33.83, 1]
+  ];
+  return Array.from({ length: 72 }, (_, i) => {
+    const woman = rnd() < 0.3;
+    const kinds = ORDER.animals.filter((a, j) => rnd() < [0.75, 0.6, 0.35, 0.15, 0.05, 0.03, 0.06, 0.05][j]);
+    const [place, lat, lng] = pick(places, places.map(p => p[3]));
+    const located = rnd() > 0.06;
+    return {
+      id: "demo" + i,
+      muda: new Date(Date.now() - rnd() * 200 * 864e5).toISOString(),
+      mkusanyaji: pick(aggregators, [5, 4, 3, 2, 1]),
+      jina: `${pick(woman ? women : men)} ${pick(last)}`,
+      jinsia: woman ? "Mwanamke" : "Mwanamume",
+      umri: pick(ORDER.umri, [1, 3, 4, 3, 2, 1]),
+      mahali: place,
+      simu: "+255" + pick(["7", "6"], [4, 1]) + String(Math.floor(rnd() * 1e8)).padStart(8, "0"),
+      wanyama_kwa_safari: pick(ORDER.wanyama_kwa_safari, [3, 5, 4, 3, 1, 0.5]),
+      safari_kwa_mwaka: pick(ORDER.safari_kwa_mwaka, [1, 3, 4, 3, 1]),
+      aina_ya_wanyama: (kinds.length ? kinds : ["Mbuzi"]).join(", "),
+      watu_nyumbani: pick(ORDER.watu_nyumbani, [1, 3, 4, 3, 1.5]),
+      sehemu_kwa_mnunuzi: pick(ORDER.share, [3, 4, 3, 1]),
+      sehemu_kwa_samora: pick(ORDER.share, [2, 3, 4, 2]),
+      lat: located ? +(lat + (rnd() - 0.5) * 0.3).toFixed(5) : "",
+      lng: located ? +(lng + (rnd() - 0.5) * 0.3).toFixed(5) : ""
+    };
+  });
+}
+
+// ---------- wiring ----------
+
+ORDER.animals.forEach(a => $("fAnimal").insertAdjacentHTML("beforeend", `<option value="${esc(a)}">${esc(label(a))}</option>`));
+["q", "fAgg", "fAnimal", "fGender", "fPeriod"].forEach(id => $(id).addEventListener("input", render));
+$("pinForm").addEventListener("submit", e => { e.preventDefault(); unlock($("pin").value.trim()); });
+$("refresh").addEventListener("click", () => unlock(getPin()));
+$("lock").addEventListener("click", lock);
+$("csv").addEventListener("click", downloadCsv);
+$("demoNote").hidden = !!DATA_URL;
+
+// Lock again after 30 minutes without use
+let idle;
+const resetIdle = () => { clearTimeout(idle); idle = setTimeout(() => { if (role) lock(); }, 30 * 60000); };
+["click", "keydown", "mousemove", "touchstart"].forEach(ev => document.addEventListener(ev, resetIdle, { passive: true }));
+resetIdle();
+
+const tip = $("tip");
+document.addEventListener("mousemove", e => {
+  const row = e.target.closest(".bar-row");
+  if (!row) { tip.style.display = "none"; return; }
+  tip.textContent = row.dataset.tip;
+  tip.style.display = "block";
+  tip.style.left = Math.min(e.clientX + 12, innerWidth - tip.offsetWidth - 8) + "px";
+  tip.style.top = (e.clientY + 14) + "px";
+});
+
+if (getPin()) unlock(getPin()); else showPin();
+</script>
+</body>
+</html>
