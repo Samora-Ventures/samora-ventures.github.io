@@ -1,13 +1,15 @@
 // Samora farmer database: receives the form, serves the impact website,
 // and backs everything up to Google Drive.
 //
-// One-time setup (in the Google Sheet: Extensions > Apps Script):
+// One-time setup (in the Google Sheet: Extensions > Apps Script, or as a
+// stand-alone project at script.google.com):
 //   1. Paste this file, save, choose "setup" in the toolbar and press Run.
-//      It creates the "Samora Farmer Database" Drive folder holding this Sheet,
-//      a Backups folder, and a PRIVATE "Settings & Security" sheet with the PINs.
+//      It creates the "Samora Farmer Database" Drive folder holding the data
+//      Sheet, a Backups folder, and a PRIVATE "Settings & Security" sheet with the PINs.
 //   2. Deploy > New deployment > Web app (Execute as: Me, Who has access: Anyone).
 //   3. Put the web-app URL into SUBMIT_URL (form) and DATA_URL (impact website).
 
+const DATABASE_NAME = "Samora Farmer Database";
 const SHEET_NAME = "Wafugaji";
 const COLUMNS = [
   "id", "muda", "mkusanyaji", "jina", "jinsia", "umri", "mahali", "simu",
@@ -23,11 +25,11 @@ const TANZANIA = { south: -12.1, north: -0.9, west: 29.2, east: 40.6 };
 
 function setup() {
   const props = PropertiesService.getScriptProperties();
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = database_(true);
 
   const folder = props.getProperty("FOLDER_ID")
     ? DriveApp.getFolderById(props.getProperty("FOLDER_ID"))
-    : DriveApp.createFolder("Samora Farmer Database");
+    : DriveApp.createFolder(DATABASE_NAME);
   DriveApp.getFileById(ss.getId()).moveTo(folder);
 
   const backups = props.getProperty("BACKUP_ID")
@@ -82,8 +84,23 @@ function setting_(name) {
   return row ? String(row[1]).trim() : "";
 }
 
+// The Sheet holding the data: the one this script is attached to or, for a
+// stand-alone script, the Sheet named DATABASE_NAME (made if there is none).
+function database_(create) {
+  const props = PropertiesService.getScriptProperties();
+  if (props.getProperty("DATA_ID")) return SpreadsheetApp.openById(props.getProperty("DATA_ID"));
+  let ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    if (!create) throw new Error("Run setup() first.");
+    const found = DriveApp.searchFiles(`title = "${DATABASE_NAME}" and mimeType = "${MimeType.GOOGLE_SHEETS}" and trashed = false`);
+    ss = found.hasNext() ? SpreadsheetApp.open(found.next()) : SpreadsheetApp.create(DATABASE_NAME);
+  }
+  props.setProperty("DATA_ID", ss.getId());
+  return ss;
+}
+
 function sheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = database_(false);
   let sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) sh = ss.insertSheet(SHEET_NAME);
   if (sh.getLastRow() === 0) sh.appendRow(COLUMNS);
