@@ -1,6 +1,6 @@
 // Keeps a copy of the form on the phone so it opens with no signal.
 // Bump CACHE when the form changes so phones pick up the new version.
-const CACHE = "samora-form-v5";
+const CACHE = "samora-form-v6";
 const FILES = ["./", "./index.html", "./icon.svg"];
 
 self.addEventListener("install", e => {
