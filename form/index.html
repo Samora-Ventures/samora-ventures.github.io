@@ -54,8 +54,8 @@
     border: 1.5px solid var(--line); border-radius: 10px; background: #fff;
   }
   input:focus { outline: none; border-color: var(--green); }
-  .gps { width: 100%; margin-top: 8px; flex-direction: row; gap: 6px; }
-  .gps-status { margin: 6px 0 0; }
+  .q.sub { margin-left: 18px; border-left: 5px solid var(--green); }
+  .q.sub .num { color: var(--green); }
   .phone { display: flex; }
   .phone .prefix {
     display: flex; align-items: center; padding: 0 12px;
@@ -148,8 +148,6 @@
     <label class="title" for="mahali"><span class="num">2.</span>Mfugaji anaishi wapi?</label>
     <p class="hint">Kijiji, kata au wilaya.</p>
     <input type="text" id="mahali" name="mahali" autocomplete="off" placeholder="Mf. Kijiji cha …, Wilaya ya …">
-    <button type="button" class="opt gps" id="gpsBtn" aria-pressed="false">📍 Chukua mahali kwa GPS</button>
-    <p class="hint gps-status" id="gpsStatus">Hiari. Bonyeza ukiwa kwa mfugaji.</p>
     <div class="err">Tafadhali andika mahali.</div>
   </div>
 
@@ -163,16 +161,97 @@
     <div class="err">Tafadhali andika namba sahihi ya simu, mf. 712 345 678.</div>
   </div>
 
-  <div class="q" data-field="wanyama_kwa_safari" data-type="single">
-    <span class="title"><span class="num">4.</span>Mfugaji anakuuzia wanyama wangapi kila unapoenda?</span>
+  <div class="q" data-field="aina_ya_wanyama" data-type="multi">
+    <span class="title"><span class="num">4.</span>Unanunua wanyama gani kutoka kwa mfugaji?</span>
+    <p class="hint">Chagua wote unaowanunua. Kwa kila mmoja, swali la idadi litafunguka chini.</p>
     <div class="opts">
-      <button type="button" class="opt" data-value="1">1</button>
-      <button type="button" class="opt" data-value="2-3">2 – 3</button>
-      <button type="button" class="opt" data-value="4-5">4 – 5</button>
-      <button type="button" class="opt" data-value="6-10">6 – 10</button>
-      <button type="button" class="opt" data-value="11-20">11 – 20</button>
-      <button type="button" class="opt" data-value="20+">Zaidi ya 20</button>
+      <button type="button" class="opt" data-value="Kuku">Kuku</button>
+      <button type="button" class="opt" data-value="Kondoo">Kondoo</button>
+      <button type="button" class="opt" data-value="Mbuzi">Mbuzi</button>
+      <button type="button" class="opt" data-value="Ng'ombe">Ng'ombe</button>
+      <button type="button" class="opt" data-value="Nguruwe">Nguruwe</button>
+      <button type="button" class="opt" data-value="Samaki">Samaki</button>
+      <button type="button" class="opt" data-value="Wengine">Wengine</button>
     </div>
+    <div class="err">Tafadhali chagua angalau mmoja.</div>
+  </div>
+
+  <!-- Follow-up questions: each opens only when its animal is chosen in question 4 -->
+  <div class="q sub" data-field="idadi_kuku" data-type="single" data-animal="Kuku" hidden>
+    <span class="title"><span class="num">↳</span>Unanunua kuku wangapi kila unapoenda?</span>
+    <div class="opts">
+      <button type="button" class="opt" data-value="100">100</button>
+      <button type="button" class="opt" data-value="250">250</button>
+      <button type="button" class="opt" data-value="500">500</button>
+      <button type="button" class="opt" data-value="1000">1,000</button>
+      <button type="button" class="opt" data-value="2000">2,000</button>
+      <button type="button" class="opt" data-value="3000">3,000</button>
+      <button type="button" class="opt" data-value="4000">4,000</button>
+      <button type="button" class="opt" data-value="5000">5,000</button>
+    </div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q sub" data-field="idadi_kondoo" data-type="single" data-animal="Kondoo" hidden>
+    <span class="title"><span class="num">↳</span>Unanunua kondoo wangapi kila unapoenda?</span>
+    <div class="opts" data-scale="livestock"></div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q sub" data-field="idadi_mbuzi" data-type="single" data-animal="Mbuzi" hidden>
+    <span class="title"><span class="num">↳</span>Unanunua mbuzi wangapi kila unapoenda?</span>
+    <div class="opts" data-scale="livestock"></div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q sub" data-field="idadi_ngombe" data-type="single" data-animal="Ng'ombe" hidden>
+    <span class="title"><span class="num">↳</span>Unanunua ng'ombe wangapi kila unapoenda?</span>
+    <div class="opts" data-scale="livestock"></div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q sub" data-field="idadi_nguruwe" data-type="single" data-animal="Nguruwe" hidden>
+    <span class="title"><span class="num">↳</span>Unanunua nguruwe wangapi kila unapoenda?</span>
+    <div class="opts" data-scale="livestock"></div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q sub" data-field="samaki_mvuvi" data-animal="Samaki" hidden>
+    <label class="title" for="samaki_mvuvi"><span class="num">↳</span>Jina la mvuvi kiongozi ni nani?</label>
+    <input type="text" id="samaki_mvuvi" name="samaki_mvuvi" autocomplete="off" placeholder="Jina kamili">
+    <div class="err">Tafadhali andika jina.</div>
+  </div>
+
+  <div class="q sub" data-field="samaki_watu_boti" data-type="single" data-animal="Samaki" hidden>
+    <span class="title"><span class="num">↳</span>Kuna watu wangapi kwenye boti yake?</span>
+    <div class="opts">
+      <button type="button" class="opt" data-value="10">10</button>
+      <button type="button" class="opt" data-value="15">15</button>
+      <button type="button" class="opt" data-value="20">20</button>
+      <button type="button" class="opt" data-value="25">25</button>
+      <button type="button" class="opt" data-value="30">30</button>
+      <button type="button" class="opt" data-value="35">35</button>
+      <button type="button" class="opt" data-value="40">40</button>
+    </div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q sub" data-field="samaki_kg_kwa_oda" data-type="single" data-animal="Samaki" hidden>
+    <span class="title"><span class="num">↳</span>Anakupa kilo ngapi za samaki kila oda?</span>
+    <div class="opts">
+      <button type="button" class="opt" data-value="Chini ya 50">Chini ya 50</button>
+      <button type="button" class="opt" data-value="50-100">50 – 100</button>
+      <button type="button" class="opt" data-value="101-250">101 – 250</button>
+      <button type="button" class="opt" data-value="251-500">251 – 500</button>
+      <button type="button" class="opt" data-value="501-1000">501 – 1,000</button>
+      <button type="button" class="opt" data-value="1000+">Zaidi ya 1,000</button>
+    </div>
+    <div class="err">Tafadhali chagua moja.</div>
+  </div>
+
+  <div class="q sub" data-field="idadi_wengine" data-type="single" data-animal="Wengine" hidden>
+    <span class="title"><span class="num">↳</span>Unanunua wanyama wengine wangapi kila unapoenda?</span>
+    <div class="opts" data-scale="livestock"></div>
     <div class="err">Tafadhali chagua moja.</div>
   </div>
 
@@ -188,24 +267,8 @@
     <div class="err">Tafadhali chagua moja.</div>
   </div>
 
-  <div class="q" data-field="aina_ya_wanyama" data-type="multi">
-    <span class="title"><span class="num">6.</span>Mfugaji anakuuzia wanyama gani?</span>
-    <p class="hint">Unaweza kuchagua zaidi ya mmoja.</p>
-    <div class="opts">
-      <button type="button" class="opt" data-value="Ng'ombe">Ng'ombe</button>
-      <button type="button" class="opt" data-value="Mbuzi">Mbuzi</button>
-      <button type="button" class="opt" data-value="Kondoo">Kondoo</button>
-      <button type="button" class="opt" data-value="Kuku">Kuku</button>
-      <button type="button" class="opt" data-value="Nguruwe">Nguruwe</button>
-      <button type="button" class="opt" data-value="Ngamia">Ngamia</button>
-      <button type="button" class="opt" data-value="Samaki">Samaki</button>
-      <button type="button" class="opt" data-value="Wengine">Wengine</button>
-    </div>
-    <div class="err">Tafadhali chagua angalau mmoja.</div>
-  </div>
-
   <div class="q" data-field="watu_nyumbani" data-type="single">
-    <span class="title"><span class="num">7.</span>Kuna watu wangapi katika nyumba ya mfugaji?</span>
+    <span class="title"><span class="num">6.</span>Kuna watu wangapi katika nyumba ya mfugaji?</span>
     <div class="opts">
       <button type="button" class="opt" data-value="1-2">1 – 2</button>
       <button type="button" class="opt" data-value="3-4">3 – 4</button>
@@ -217,7 +280,7 @@
   </div>
 
   <div class="q" data-field="sehemu_kwa_mnunuzi" data-type="single">
-    <span class="title"><span class="num">8.</span>Mfugaji anakuuzia wewe sehemu gani ya mifugo yake?</span>
+    <span class="title"><span class="num">7.</span>Mfugaji anakuuzia wewe sehemu gani ya mifugo yake?</span>
     <p class="hint">Kati ya mifugo yote anayouza.</p>
     <div class="opts">
       <button type="button" class="opt" data-value="Robo (kidogo)">Kidogo<small>robo · ¼</small></button>
@@ -229,7 +292,7 @@
   </div>
 
   <div class="q" data-field="sehemu_kwa_samora" data-type="single">
-    <span class="title"><span class="num">9.</span>Wewe unaiuzia Samora sehemu gani ya mifugo yako?</span>
+    <span class="title"><span class="num">8.</span>Wewe unaiuzia Samora sehemu gani ya mifugo yako?</span>
     <p class="hint">Kati ya mifugo yote unayouza.</p>
     <div class="opts">
       <button type="button" class="opt" data-value="Robo (kidogo)">Kidogo<small>robo · ¼</small></button>
@@ -271,31 +334,31 @@ function fillAggregator() {
 }
 fillAggregator();
 
-// Optional GPS position of the farm, for the map on the impact website.
-// Works without mobile data: the phone's GPS needs no signal.
-let gps = null;
-const gpsBtn = document.getElementById("gpsBtn");
-const gpsStatus = document.getElementById("gpsStatus");
-function resetGps() {
-  gps = null;
-  gpsBtn.setAttribute("aria-pressed", "false");
-  gpsBtn.disabled = false;
-  gpsStatus.textContent = "Hiari. Bonyeza ukiwa kwa mfugaji.";
-}
-gpsBtn.addEventListener("click", () => {
-  if (!navigator.geolocation) { gpsStatus.textContent = "Simu hii haina GPS."; return; }
-  gpsBtn.disabled = true;
-  gpsStatus.textContent = "Inatafuta mahali…";
-  navigator.geolocation.getCurrentPosition(p => {
-    gps = { lat: +p.coords.latitude.toFixed(5), lng: +p.coords.longitude.toFixed(5) };
-    gpsBtn.setAttribute("aria-pressed", "true");
-    gpsBtn.disabled = false;
-    gpsStatus.textContent = `Mahali pamepatikana ✓ (karibu mita ${Math.round(p.coords.accuracy)})`;
-  }, () => {
-    gpsBtn.disabled = false;
-    gpsStatus.textContent = "Imeshindikana. Washa Location kwenye simu na ujaribu tena.";
-  }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 });
+// Goat, sheep, cattle, pig and "other" follow-ups share one count scale
+const LIVESTOCK = [["1", "1"], ["2-3", "2 – 3"], ["4-5", "4 – 5"], ["6-10", "6 – 10"], ["11-20", "11 – 20"], ["20+", "Zaidi ya 20"]];
+form.querySelectorAll('.opts[data-scale="livestock"]').forEach(box => {
+  box.innerHTML = LIVESTOCK.map(([v, t]) => `<button type="button" class="opt" data-value="${v}">${t}</button>`).join("");
 });
+
+// Follow-up questions open only for the animals picked in question 4;
+// unpicking an animal clears its follow-up answers.
+const subQuestions = questions.filter(q => q.dataset.animal);
+function clearQuestion(q) {
+  delete answers[q.dataset.field];
+  q.classList.remove("invalid");
+  q.querySelectorAll(".opt").forEach(b => b.setAttribute("aria-pressed", "false"));
+  const input = q.querySelector("input");
+  if (input) input.value = "";
+}
+function syncAnimalQuestions() {
+  const picked = answers.aina_ya_wanyama || [];
+  subQuestions.forEach(q => {
+    const show = picked.includes(q.dataset.animal);
+    if (!show && !q.hidden) clearQuestion(q);
+    q.hidden = !show;
+  });
+}
+const activeQuestions = () => questions.filter(q => !q.hidden);
 
 function load(key) {
   try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
@@ -324,6 +387,7 @@ questions.forEach(q => {
         btn.setAttribute("aria-pressed", String(on));
         answers[field] = [...q.querySelectorAll('.opt[aria-pressed=true]')].map(b => b.dataset.value);
       }
+      if (field === "aina_ya_wanyama") syncAnimalQuestions();
       q.classList.remove("invalid");
       updateProgress();
     });
@@ -354,8 +418,9 @@ function isValid(q) {
 }
 
 function updateProgress() {
-  const done = questions.filter(isValid).length;
-  document.getElementById("bar").style.width = (done / questions.length * 100) + "%";
+  const active = activeQuestions();
+  const done = active.filter(isValid).length;
+  document.getElementById("bar").style.width = (done / active.length * 100) + "%";
 }
 
 async function send(row) {
@@ -417,7 +482,7 @@ function downloadCsv() {
 
 form.addEventListener("submit", async e => {
   e.preventDefault();
-  const bad = questions.filter(q => !isValid(q));
+  const bad = activeQuestions().filter(q => !isValid(q));
   questions.forEach(q => q.classList.toggle("invalid", bad.includes(q)));
   if (bad.length) { bad[0].scrollIntoView({ behavior: "smooth", block: "center" }); return; }
 
@@ -425,10 +490,8 @@ form.addEventListener("submit", async e => {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     muda: new Date().toISOString()
   };
-  questions.forEach(q => row[q.dataset.field] = value(q));
+  questions.forEach(q => row[q.dataset.field] = q.hidden ? "" : value(q));
   try { localStorage.setItem(AGG_KEY, row.mkusanyaji); } catch {}
-  row.lat = gps ? gps.lat : "";
-  row.lng = gps ? gps.lng : "";
 
   const btn = document.getElementById("submitBtn");
   btn.disabled = true; btn.textContent = "Inatuma…";
@@ -452,7 +515,7 @@ document.getElementById("again").addEventListener("click", () => {
   Object.keys(answers).forEach(k => delete answers[k]);
   form.querySelectorAll(".opt").forEach(b => b.setAttribute("aria-pressed", "false"));
   questions.forEach(q => q.classList.remove("invalid"));
-  resetGps();
+  syncAnimalQuestions();
   fillAggregator();
   updateProgress();
   updateCounter();
