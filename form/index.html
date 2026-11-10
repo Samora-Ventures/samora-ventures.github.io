@@ -423,12 +423,15 @@ function updateProgress() {
   document.getElementById("bar").style.width = (done / active.length * 100) + "%";
 }
 
+// A form counts as sent only when the Sheet replies that it saved it (or
+// already had it); anything else leaves it in the queue to try again.
 async function send(row) {
   if (!SUBMIT_URL || !navigator.onLine) return false;
   try {
     // text/plain avoids a CORS preflight, which Apps Script does not answer
-    await fetch(SUBMIT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(row) });
-    return true;
+    const res = await fetch(SUBMIT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(row) });
+    const reply = await res.json();
+    return reply.ok === true;
   } catch { return false; }
 }
 
@@ -468,16 +471,26 @@ function updateCounter() {
   }
 }
 
-function downloadCsv() {
-  const rows = load(SAVED_KEY);
-  if (!rows.length) return;
+function saveCsv(rows, filename) {
   const cols = Object.keys(rows[0]);
   const esc = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const csv = [cols.join(","), ...rows.map(r => cols.map(c => esc(r[c])).join(","))].join("\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv" }));
-  a.download = "samora_wafugaji.csv";
+  a.download = filename;
   a.click();
+}
+
+function downloadCsv() {
+  const rows = load(SAVED_KEY);
+  if (rows.length) saveCsv(rows, "samora_wafugaji.csv");
+}
+
+// A file copy of each form in the phone's Downloads survives even if the
+// browser's saved data is cleared.
+function saveToPhone(row) {
+  const who = String(row.jina).trim().replace(/[^\p{L}\p{N}]+/gu, "_").slice(0, 30) || "mfugaji";
+  saveCsv([row], `samora_${row.muda.slice(0, 10)}_${who}.csv`);
 }
 
 form.addEventListener("submit", async e => {
@@ -497,14 +510,17 @@ form.addEventListener("submit", async e => {
   btn.disabled = true; btn.textContent = "Inatuma…";
   store(SAVED_KEY, [...load(SAVED_KEY), row]);
   store(QUEUE_KEY, [...load(QUEUE_KEY), row]);
+  // Before any waiting, while the tap still counts, so the phone allows the download
+  try { saveToPhone(row); } catch {}
   updateCounter();
   await flushQueue();
   const sent = !load(QUEUE_KEY).some(r => r.id === row.id);
   btn.disabled = false; btn.textContent = "Tuma";
 
   document.getElementById("doneMsg").textContent =
-    sent ? "Taarifa zimetumwa." :
-    "Taarifa zimehifadhiwa kwenye simu hii na zitatumwa mtandao ukipatikana.";
+    (sent ? "Taarifa zimepokelewa na Samora ✓" :
+    "Taarifa zimehifadhiwa kwenye simu hii na zitatumwa mtandao ukipatikana.") +
+    " Nakala imehifadhiwa kwenye Downloads ya simu.";
   form.hidden = true;
   document.getElementById("done").hidden = false;
   window.scrollTo(0, 0);
