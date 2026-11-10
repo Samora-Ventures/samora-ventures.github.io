@@ -11,15 +11,15 @@
 
 const DATABASE_NAME = "Samora Farmer Database";
 const SHEET_NAME = "Wafugaji";
+// Sheet columns, in the same order as the questions on the form
 const COLUMNS = [
   "id", "muda", "mkusanyaji", "jina", "jinsia", "umri", "mahali", "simu",
-  "wanyama_kwa_safari", "safari_kwa_mwaka", "aina_ya_wanyama",
-  "watu_nyumbani", "sehemu_kwa_mnunuzi", "sehemu_kwa_samora",
-  "lat", "lng", "chanzo_mahali"
+  "aina_ya_wanyama", "idadi_kuku", "idadi_kondoo", "idadi_mbuzi", "idadi_ngombe", "idadi_nguruwe",
+  "samaki_mvuvi", "samaki_watu_boti", "samaki_kg_kwa_oda", "idadi_wengine",
+  "safari_kwa_mwaka", "watu_nyumbani", "sehemu_kwa_mnunuzi", "sehemu_kwa_samora"
 ];
 const MAX_WRONG_PINS = 5;   // then the website locks for everyone...
 const LOCK_MINUTES = 15;    // ...for this long
-const TANZANIA = { south: -12.1, north: -0.9, west: 29.2, east: 40.6 };
 
 // ---------- setup and settings ----------
 
@@ -104,12 +104,25 @@ function sheet_() {
   let sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) sh = ss.insertSheet(SHEET_NAME);
   if (sh.getLastRow() === 0) sh.appendRow(COLUMNS);
+  arrange_(sh);
   // Plain text, or Sheets turns "2-3" into a date and "+255…" into a number
-  sh.getRange(1, 1, sh.getMaxRows(), COLUMNS.length).setNumberFormat("@");
-  // Add any new columns to a sheet made by an older version of this script
-  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-  COLUMNS.forEach(c => { if (!head.includes(c)) sh.getRange(1, sh.getLastColumn() + 1).setValue(c); });
+  sh.getRange(1, 1, sh.getMaxRows(), sh.getLastColumn()).setNumberFormat("@");
   return sh;
+}
+
+// Puts the columns in form order. Columns from older versions of the form keep
+// their data and move to the far right, so nothing is ever lost.
+function arrange_(sh) {
+  const values = sh.getDataRange().getValues();
+  const head = values[0];
+  const order = COLUMNS.concat(head.filter(h => h && !COLUMNS.includes(h)));
+  if (head.filter(Boolean).length === order.length && order.every((h, i) => head[i] === h)) return;
+  if (sh.getMaxColumns() < order.length) sh.insertColumnsAfter(sh.getMaxColumns(), order.length - sh.getMaxColumns());
+  const from = order.map(h => head.indexOf(h));
+  const rows = values.map((r, i) => (i === 0 ? order : from.map(j => (j < 0 ? "" : r[j]))));
+  sh.getRange(1, 1, sh.getMaxRows(), order.length).setNumberFormat("@");
+  sh.getRange(1, 1, values.length, head.length).clearContent();
+  sh.getRange(1, 1, rows.length, order.length).setValues(rows);
 }
 
 // ---------- web requests ----------
@@ -136,29 +149,12 @@ function save_(row) {
     // A phone may resend a form if the signal dropped before the reply came back
     const seen = row.id && sh.getRange("A:A").createTextFinder(row.id).matchEntireCell(true).findNext();
     if (seen) return { ok: true, duplicate: true };
-    Object.assign(row, locate_(row));
     const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
     sh.appendRow(head.map(c => row[c] ?? ""));
     return { ok: true };
   } finally {
     lock.releaseLock();
   }
-}
-
-// GPS from the phone if taken, otherwise look up the typed place name
-function locate_(row) {
-  if (inTanzania_(row.lat, row.lng)) return { chanzo_mahali: "gps" };
-  try {
-    const res = Maps.newGeocoder().setRegion("tz").geocode(row.mahali + ", Tanzania");
-    const loc = res.status === "OK" && res.results[0].geometry.location;
-    if (loc && inTanzania_(loc.lat, loc.lng)) return { lat: loc.lat, lng: loc.lng, chanzo_mahali: "jina la mahali" };
-  } catch (err) {}
-  return { lat: "", lng: "", chanzo_mahali: "" };
-}
-
-function inTanzania_(lat, lng) {
-  lat = Number(lat); lng = Number(lng);
-  return lat && lng && lat > TANZANIA.south && lat < TANZANIA.north && lng > TANZANIA.west && lng < TANZANIA.east;
 }
 
 // Data for the impact website, checked against the PINs in the Settings sheet
@@ -180,12 +176,7 @@ function read_(pin) {
   const [head, ...values] = sheet_().getDataRange().getDisplayValues();
   const rows = values.map(r => {
     const o = Object.fromEntries(head.map((h, i) => [h, r[i]]));
-    if (role === "funder") {
-      delete o.simu;
-      // About 1 km, so funders never see a farmer's exact home
-      if (o.lat) o.lat = Number(o.lat).toFixed(2);
-      if (o.lng) o.lng = Number(o.lng).toFixed(2);
-    }
+    if (role === "funder") delete o.simu;
     return o;
   });
   return { role, rows };
